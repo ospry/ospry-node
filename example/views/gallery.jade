@@ -1,0 +1,15 @@
+doctype html
+html(lang="en")
+  head
+    title= 'Ospry Express'
+  body
+    .image-set
+      h2 Public URLs
+      each url in urls
+        img(src="#{url}")
+    .image-set
+      h2 Signed URLs
+      each surl in signed
+        img(src="#{surl}")
+    form(method="POST", action="/togglePrivate")
+      input(type="submit", value="Toggle Private")

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ospry - Express Upload</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="content">
+        <form method="POST" action="/images" enctype="multipart/form-data">
+          <input name="file" type="file" multiple />
+          <button type="submit">Upload</button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>

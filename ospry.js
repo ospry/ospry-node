@@ -12,7 +12,7 @@ var _errNetwork = {
 };
 
 var _nop = function() {};
-var _isObject = function(o) { return (typeof o === 'object' && o !== null); };
+var _isObject = function(o) { return (typeof o === 'object' && o !== null && !(o instanceof Array)); };
 var _isArray = function(a) { return (a instanceof Array); };
 var _isNumber = function(n) { return (typeof n === 'number'); };
 var _isString = function(s) { return (typeof s === 'string'); };
@@ -55,12 +55,20 @@ Ospry.prototype.up = function(opts) {
   u.query.filename = opts.filename;
   u.query.isPrivate = opts.isPrivate;
   opts.stream.pipe(this._send({
-    method: 'PUT',
-    url: url.format(u);
+    method: 'POST',
+    url: url.format(u),
     // Setting Content-Type to image/jpeg to distinguish from
     // multipart/form-data, but the image doesn't have to be a jpeg.
     headers: { 'Content-Type': 'image/jpeg' },
-  }, opts.imageReady));
+  }, function(err, images) {
+    if (err !== null) {
+      opts.imageReady(err, null);
+    } else if (images[0].hasOwnProperty('error')) {
+      opts.imageReady(images[0].error, null);
+    } else {
+      opts.imageReady(null, images[0]);
+    } 
+  }));
 };
 
 Ospry.prototype.get = function(opts) {
@@ -97,13 +105,15 @@ Ospry.prototype.formatUrl = function(imgUrl, opts) {
     format: null,
     maxHeight: null,
     maxWidth: null,
-    timeExpired: null,
+    expireDate: null,
+    expireSeconds: null,
   });
   // Skip url parsing if no modifications are required.
   if (opts.format === null &&
       opts.maxWidth === null &&
       opts.maxHeight === null &&
-      opts.timeExpired === null) {
+      opts.expireDate === null &&
+      opts.expireSeconds === null) {
     return imgUrl;
   }
   var u = url.parse(imgUrl, true, true);
@@ -116,8 +126,13 @@ Ospry.prototype.formatUrl = function(imgUrl, opts) {
   if (opts.maxHeight === null && u.query.hasOwnProperty('maxHeight')) {
     opts.maxHeight = u.query.maxHeight;
   }
-  if (opts.timeExpired === null && u.query.hasOwnProperty('timeExpired')) {
-    opts.timeExpired = new Date(u.query.timeExpired);
+  if (opts.expireSeconds !== null) {
+    var date = new Date();
+    date.setTime(Date.now() + (opts.expireSeconds * 1000));
+    opts.expireDate = date;
+  }
+  if (opts.expireDate === null && u.query.hasOwnProperty('timeExpired')) {
+    opts.expireDate = new Date(u.query.timeExpired);
   }
   if (u.query.hasOwnProperty('url')) {
     imgUrl = u.query.url;
@@ -128,14 +143,16 @@ Ospry.prototype.formatUrl = function(imgUrl, opts) {
   }
 
   // If timeExpired is present, the url needs to be signed.
-  if (opts.timeExpired !== null) {
-    var payload = imgUrl + '?timeExpired=' + encodeURIComponent(opts.timeExpired.toISOString());
+  if (opts.expireDate !== null) {
+    var payload = imgUrl + '?timeExpired=' + encodeURIComponent(opts.expireDate.toISOString());
     var hmac = crypto.createHmac('sha256', this._key);
     hmac.update(payload);
     u.query.signature = hmac.digest('base64');
-    u.query.url = imgUrl
+    u.query.url = imgUrl;
+    u.protocol = 'https:';
     u.host = 'api.ospry.io';
     u.pathname = '/';
+    u.query.timeExpired = opts.expireDate.toISOString();
   }
 
   if (opts.format !== null) {
@@ -277,7 +294,9 @@ Ospry.prototype._send = function(req, done) {
       done(json.error, null);
       return;
     }
-    // TODO: replace timeCreated with Date object in each image.
+    for (var i = 0; i < json.images.length; i++) {
+      json.images[i].timeCreated = new Date(json.images[i].timeCreated);
+    }
     done(null, json.images);
   });
 };
