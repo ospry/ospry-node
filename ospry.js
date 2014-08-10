@@ -34,6 +34,8 @@ var Ospry = function(key) {
   this._serverUrl = 'https://api.ospry.io/v1';
 };
 
+Ospry.formats = ['jpeg', 'png', 'gif', 'bmp'];
+
 // Server-side upload from a stream source.
 Ospry.prototype.up = function(opts) {
   if (!_isObject(opts)) {
