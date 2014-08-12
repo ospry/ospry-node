@@ -1,28 +1,34 @@
 {
   "name": "ospry-node",
+  "description": "Ospry image hosting bindings for node.js",
   "version": "0.1.0",
-  "description": "Ospry bindings for node.js",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ospry/ospry-node.git"
-  },
+  "author": "Ryan Brown <ryan@ospry.io>, Tom Hauburger <tom@ospry.io>",
   "keywords": [
     "Ospry",
     "ospry",
     "image",
     "hosting"
   ],
-  "author": "Ryan Brown <ryan@ospry.io>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ospry/ospry-node/issues"
+  "repository": {
+    "type": "git",
+    "url" : "https://github.com/ospry/ospry-node.git"
   },
+  "bugs": {
+    "url" : "https://github.com/ospry/ospry-node/issues"
+  }
+  "license": "MIT",
   "homepage": "https://github.com/ospry/ospry-node",
+  "engines": [
+    "node >= 0.8.0"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "request": "^2.40.0"
+  },
+  "devDependencies": {
+    "tape": "^2.14.0"
   }
 }
