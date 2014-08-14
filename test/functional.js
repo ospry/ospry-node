@@ -24,7 +24,7 @@ if (!publicAPIKey) {
 }
 
 var ospry = new Ospry(secretAPIKey);
-ospry._serverURL = 'https://10.0.1.10:10444/v1';
+ospry._serverURL = 'https://localhost:10444/v1';
 ospry._strictSSL = false;
 
 var ospryPublicClient = new Ospry(publicAPIKey);
@@ -32,15 +32,12 @@ ospryPublicClient._serverURL = 'https://10.0.1.10:10444/v1';
 ospryPublicClient._strictSSL = false;
 
 var testSubdomain = 'test-node';
+var testPublicUpload  = null;
+
 var imageURL      = 'http://foo.ospry.io/bar/baz.png';
 var localImageURL = 'http://ospry.io/bar/baz.png?subdomain=foo';
 
-var testPublicUpload  = null;
-var testPrivateUpload = null;
-
-var File_SmallJPG  = __dirname + '/testImages/small.jpg';
-var File_MediumJPG = __dirname + '/testImages/medium.jpg';
-var File_LargeJPG  = __dirname + '/testImages/large.jpg';
+var File_SmallJPG  = __dirname + '/img/small.jpg';
 
 // Utility methods
 
