@@ -1,9 +1,24 @@
+/* app.js
+ *
+ * Example usage of ospry-node bindings in an express app
+ */
+
 var app = require('express')();
 var util = require('util');
 var busboy = require('connect-busboy');
 
-var Ospry = require('../ospry.js');
-var ospry = new Ospry('sk-test-***'); // Add your secret test API key here
+// Access API Key
+
+var secretAPIKey = process.env.OSPRY_SECRET;
+if (!secretAPIKey) {
+  console.error('Error: An Ospry secret API key is required to run the example. You can pass one in using:\n  `OSPRY_SECRET=abc123yourkey node app.js`');
+  process.exit(1);
+}
+
+// Initialize Ospry
+
+var Ospry = require('../lib/ospry.js');
+var ospry = new Ospry(secretAPIKey);
 
 // Route Handlers
 
@@ -15,62 +30,52 @@ var serveIndex = function(req, res) {
 // Render all images with both a public and signed URL, and resizing
 var serveImages = function(req, res) {
   if (db.length === 0) { return res.send('No images uploaded yet'); }
-  var urls = db.urls;
-  var pubURLs = [];
-  var signedURLs = [];
-  for (var i = 0; i < urls.length; i++) {
-    pubURLs.push(ospry.formatUrl(urls[i], {maxHeight: 150}));
-    signedURLs.push(ospry.formatUrl(urls[i], {expireSeconds: 30, maxHeight: 150}));
+  var pub = [];
+  var signed = [];
+  for (var i = 0; i < db.urls.length; i++) {
+    pub.push(ospry.formatURL(db.urls[i], {maxHeight: 150}));
+    signed.push(ospry.formatURL(db.urls[i], {expireSeconds: 30, maxHeight: 150}));
   }
-  res.render('gallery', {urls: pubURLs, signed: signedURLs});
+  res.render('gallery', {urls: pub, signed: signed});
 };
 
 // Toggle the permissions on all uploaded images
 var togglePrivate = function(req, res) {
-  ospry.getMetadata([db.ids[0]], function(err, data) {
-    if (err) { console.error(err); return res.status(err.httpStatusCode).end(); }
-    var isPrivate = data[0].isPrivate;
-    if (isPrivate) {
-      ospry.makePublic(db.ids, function(err) { res.redirect('/images'); });
-    } else {
-      ospry.makePrivate(db.ids, function(err) { res.redirect('/images'); });
-    }
+  ospry.getMetadata(db.ids[0], function(err, metadata) {
+    if (err) { return res.status(err.statusCode).end(); }
+    var isPrivate = metadata.isPrivate;
+    for (var i = 0; i < db.length; i++) {
+      if (isPrivate) {
+        ospry.makePublic(db.ids[i], function(err) { res.redirect('/images'); });
+      } else {
+        ospry.makePrivate(db.ids[i], function(err) { res.redirect('/images'); });
+      }
+    };
   });
 };
 
 // Upload images from multipart form, and store in Ospry
 var uploadImages = function(req, res) {
 
-  var uploads = 0;
-  var doneParsing = false;
-
-  var finishedUpload = function(err, metadata) {
-    uploads--;
-    if (err === null) {
-      // Upload successful, save image metadata
-      console.log('Ospry upload success: ', util.inspect(metadata));
-      db.push(metadata);
+  var uploadComplete = function(err, metadata) {
+    if (err !== null) {
+      console.error('Error with upload: ', err);
+      res.status(err.statusCode).end();
+      return;
     }
-    if (uploads === 0 && doneParsing) {
-      res.redirect('/images');
-    }
+    // Upload successful, save image metadata
+    console.log('Ospry upload success:\n\n ', util.inspect(metadata));
+    db.push(metadata);
+    res.redirect('/images');
   };
 
-  req.busboy.on('file', function(fieldname, fileStream, filename, encoding, mimetype) {
-    uploads++;
-    ospry.up({
+  req.busboy.on('file', function(field, fileStream, filename) {
+    var upload = ospry.up({
       filename: filename,
-      stream: fileStream,
       isPrivate: true,
-      imageReady: finishedUpload,
+      imageReady: uploadComplete,
     });
-  });
-
-  req.busboy.on('finish', function() { 
-    doneParsing = true;
-    if (uploads === 0) {
-      res.redirect('/images');
-    }
+    fileStream.pipe(upload);
   });
 
   req.pipe(req.busboy);
