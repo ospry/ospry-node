@@ -2,8 +2,6 @@
 
 Node.js bindings for the Ospry image hosting API. Learn more about Ospry at [ospry.io](https://ospry.io).
 
-[![NPM](https://nodei.co/npm/ospry.png)](https://nodei.co/npm/ospry/)
-
 ## About
 
 **ospry** allows developers to upload, download, delete, and change permissions on images stored with Ospry's image hosting services. The most popular use for ospry is to verify client-side image uploads in a process we call [image claiming](https://ospry.io/docs#claiming).
