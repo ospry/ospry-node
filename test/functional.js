@@ -1,6 +1,13 @@
 /* test/functional.js
  *
  * Functional tests for ospry-node bindings
+ *
+ * Pass in environment variables to configure tests
+ *
+ * OSPRY_SECRET_KEY (required) 
+ * OSPRY_PUBLIC_KEY (required)
+ * CLAIMING_ENABLED - (true / false) Whether the account you're testing has claiming enabled (defalts to false)
+ * USE_LOCAL - (true/false) Whether to use a local development server, or live API (defaults to live)
  */
 
 var test = require('tape');
@@ -12,6 +19,7 @@ var url = require('url');
 var secretAPIKey = process.env.OSPRY_SECRET_KEY;
 var publicAPIKey = process.env.OSPRY_PUBLIC_KEY;
 var claimingEnabled = !!(process.env.CLAIMING_ENABLED === 'true');
+var useLocalServer = !!(process.env.USE_LOCAL === 'true');
 
 if (!secretAPIKey) {
   console.error('A valid secret API key is required to run tests!');
@@ -24,11 +32,11 @@ if (!publicAPIKey) {
 }
 
 var ospry = new Ospry(secretAPIKey);
-ospry._serverURL = 'https://localhost:10444/v1';
+ospry._serverURL = useLocalServer ? 'https://localhost:10444/v1' : ospry._serverURL;
 ospry._strictSSL = false;
 
 var ospryPublicClient = new Ospry(publicAPIKey);
-ospryPublicClient._serverURL = 'https://10.0.1.10:10444/v1';
+ospryPublicClient._serverURL = useLocalServer ? 'https://localhost:10444/v1' : ospryPublicClient._serverURL;
 ospryPublicClient._strictSSL = false;
 
 var testSubdomain = 'test-node';
@@ -337,6 +345,7 @@ test('ospry.makePrivate: Validate Inputs', function(t) {
 test('ospry.makePrivate: Make Public Image Private', function(t) {
   t.plan(3);
   var makePrivate = function(err, metadata) {
+    if (err) { return console.error(err); }
     t.equal(metadata.isPrivate, false, 'uploaded image is public');
     ospry.makePrivate(metadata.id, function(err, newMetadata) {
       t.ok((_isObject(newMetadata) && newMetadata.id === metadata.id), 'got updated metadata');
