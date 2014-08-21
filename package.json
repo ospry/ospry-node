@@ -1,7 +1,7 @@
 {
   "name": "ospry",
   "description": "Ospry image hosting bindings for node.js",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Ryan Brown <ryan@ospry.io>, Tom Hauburger <tom@ospry.io>",
   "keywords": [
     "Ospry",
