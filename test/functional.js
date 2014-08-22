@@ -271,7 +271,7 @@ test('ospry.formatURL: URL Signing - Expire Seconds', function(t) {
   // Append formatting options onto a signed URL
   var signed = url.format(u);
   var signedWithQS = ospry.formatURL(signed, { format: 'gif'});
-  t.equal(signedWithQS, signed + '&format=gif', 'append formatting options to signed url');
+  t.equal(url.parse(signedWithQS).search.indexOf('?format'), 0, 'append formatting options to signed url');
 
   // Establish a new expiration time for an already signed URL
   var signedWithNewExpiration = ospry.formatURL(signed, {expireSeconds: 100});
@@ -297,7 +297,7 @@ test('ospry.formatURL: URL Signing - Expire Date', function(t) {
   // Append formatting options onto a signed URL
   var signed = url.format(u);
   var signedWithQS = ospry.formatURL(signed, { format: 'gif'});
-  t.equal(signedWithQS, signed + '&format=gif', 'append formatting options to signed url');
+  t.equal(url.parse(signedWithQS).search.indexOf('?format'), 0, 'append formatting options to signed url');
 
   // Establish a new expiration time for an already signed URL
   var signedWithNewExpiration = ospry.formatURL(signed, {expireDate: createFutureDate()});
@@ -400,6 +400,85 @@ test('ospry.del: Delete an Image', function(t) {
     imageReady: deleteImage,
   });
   fs.createReadStream(File_SmallJPG).pipe(up);
+});
+
+// ospry.formatURL - Test a variety of formatting tasks, including
+// editing query strings on signed urls.
+test('ospry.formatURL - format gauntlet', function(t) {
+
+  var testNames = [
+    'add maxHeight',
+    'add maxWidth',
+    'add format',
+    'add multiple options',
+    'override maxHeight',
+    'override maxWidth',
+    'override format',
+    'maintain maxHeight, add maxWidth',
+    'maintain maxWidth, add maxHeight',
+    'maintain maxWidth, maxHeight, add format',
+//    'add qs to signed url',
+//    'override qs in signed url',
+    'pass through sub',
+  ];
+
+  var opts = [
+    { maxHeight: 200 },
+    { maxWidth: 300 },
+    { format: 'gif' },
+    { maxHeight: 200, maxWidth: 300, format: 'gif' },
+    { maxHeight: 1000 },
+    { maxWidth: 1000 },
+    { format: 'gif' },
+    { maxWidth: 1000 },
+    { maxHeight: 1000 },
+    { format: 'gif' },
+//    { maxHeight: 1000 },
+//    { format: 'jpeg', maxHeight: 1000 },
+    {},
+  ];
+
+  var ins = [
+    'http://sub.ospry.io/abc/test.jpg',
+    'http://sub.ospry.io/abc/test.jpg',
+    'http://sub.ospry.io/abc/test.jpg',
+    'http://sub.ospry.io/abc/test.jpg',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=200',
+    'http://sub.ospry.io/abc/test.jpg?maxWidth=300',
+    'http://sub.ospry.io/abc/test.jpg?format=png',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=200',
+    'http://sub.ospry.io/abc/test.jpg?maxWidth=300',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=200&maxWidth=300',
+//    'https://localhost:10444/?signature=abcd&url=http%3A%2F%2Ffoo.ospry.io%2Fbar%2Fbaz.png&timeExpired=2014-08-15T18%3A03%3A33.401Z',
+//    'https://localhost:10444/?signature=abcd&url=http%3A%2F%2Ffoo.ospry.io%2Fbar%2Fbaz.png&timeExpired=2014-08-15T18%3A03%3A33.401Z&format=gif',
+    'https://ssl.ospry.io/foo/test.jpg?sub=abc',
+  ];
+
+  // When constructing tests, take note that any non-overridden settings
+  // will appear first in the output URL. Otherwise, the order is format,
+  // height, width.
+
+  var outs = [
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=200',
+    'http://sub.ospry.io/abc/test.jpg?maxWidth=300',
+    'http://sub.ospry.io/abc/test.jpg?format=gif',
+    'http://sub.ospry.io/abc/test.jpg?format=gif&maxHeight=200&maxWidth=300',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=1000',
+    'http://sub.ospry.io/abc/test.jpg?maxWidth=1000',
+    'http://sub.ospry.io/abc/test.jpg?format=gif',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=200&maxWidth=1000',
+    'http://sub.ospry.io/abc/test.jpg?maxHeight=1000&maxWidth=300',
+    'http://sub.ospry.io/abc/test.jpg?format=gif&maxHeight=200&maxWidth=300',
+//    'https://' + url.parse(ospry._serverURL).host + '/?maxHeight=1000&signature=abcd&timeExpired=2014-08-15T18%3A03%3A33.401Z&url=http%3A%2F%2Ffoo.ospry.io%2Fbar%2Fbaz.png',
+//    'https://' + url.parse(ospry._serverURL).host + '/?format=jpeg&maxHeight=1000&signature=abcd&timeExpired=2014-08-15T18%3A03%3A33.401Z&url=http%3A%2F%2Ffoo.ospry.io%2Fbar%2Fbaz.png',
+    'https://ssl.ospry.io/foo/test.jpg?sub=abc',
+  ];
+
+  t.plan(testNames.length);
+  for (var i = 0; i < testNames.length; i++) {
+    t.equal(outs[i], ospry.formatURL(ins[i], opts[i]), testNames[i]);
+  }
+
 });
 
 
