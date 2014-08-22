@@ -256,6 +256,7 @@ Calls that receive a `metadata` object in the callback can expect the following 
 {
   id:          // {string}  Ospry image ID
   url:         // {string}  Ospry download URL
+  httpsURL:    // {string}  Download URL if your site is served over HTTPS
   timeCreated: // {Date}    Image upload time
   isClaimed:   // {boolean} Whether the image upload has been verified
   isPrivate:   // {boolean} Whether the image is private
