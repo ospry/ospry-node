@@ -1,6 +1,7 @@
 /* app.js
  *
  * Example usage of ospry-node bindings in an express app
+ * Simple example uses a single image upload at a time.
  */
 
 var app = require('express')();
@@ -41,17 +42,32 @@ var serveImages = function(req, res) {
 
 // Toggle the permissions on all uploaded images
 var togglePrivate = function(req, res) {
+
+  var total = db.length;
+  var done = 0;
+
+  var finished = function(err) {
+    if (err) {
+      console.error(err);
+    }
+    done++;
+    if (done === total) {
+      res.redirect('/images');
+    }
+  };
+
   ospry.getMetadata(db.ids[0], function(err, metadata) {
     if (err) { return res.status(err.statusCode).end(); }
     var isPrivate = metadata.isPrivate;
     for (var i = 0; i < db.length; i++) {
       if (isPrivate) {
-        ospry.makePublic(db.ids[i], function(err) { res.redirect('/images'); });
+        ospry.makePublic(db.ids[i], finished);
       } else {
-        ospry.makePrivate(db.ids[i], function(err) { res.redirect('/images'); });
+        ospry.makePrivate(db.ids[i], finished);
       }
     };
   });
+
 };
 
 // Upload images from multipart form, and store in Ospry
