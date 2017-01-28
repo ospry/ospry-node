@@ -276,7 +276,7 @@ For example, a `404` error looks like:
 
 ```js
 {
-  name: `not-found',
+  name: 'not-found',
   statusCode: 404,
   message: 'Not found.',
   stack: ...
